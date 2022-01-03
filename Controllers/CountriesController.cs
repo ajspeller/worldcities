@@ -19,10 +19,28 @@ namespace worldcities.Controllers
             _context = context;
         }
 
-        // Get: api/Countries
-        public async Task<ActionResult<IEnumerable<Country>>> GetCountries()
+        // GET: api/Countries
+        // GET: api/Countries?pageIndex=0&pageSize=10
+        // GET: api/Countries/0/10
+        // GET: api/Countries?pageIndex=0&pageSize=10&sortColumn=name&sortOrder=asc
+        [HttpGet]
+        // [Route("{pageIndex}/{pageSize}")]
+        public async Task<ActionResult<ApiResult<Country>>> GetCountries(
+            int pageIndex = 0,
+            int pageSize = 10,
+            string sortColumn = null,
+            string sortOrder = null,
+            string filterColumn = null,
+            string filterQuery = null)
         {
-            return await _context.Countries.ToListAsync();
+            return await ApiResult<Country>.CreateAsync(
+                _context.Countries,
+                pageIndex,
+                pageSize,
+                sortColumn,
+                sortOrder,
+                filterColumn,
+                filterQuery);
         }
 
         // Get: api/Countries/5

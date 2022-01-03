@@ -4,6 +4,14 @@
 
 <p *ngIf="!cities"><em>Loading ...</em></p>
 
+<mat-form-field [hidden]="!cities">
+  <input
+    matInput
+    (keyup)="initialize($event.target.value)"
+    placeholder="Filter by name (or part of it)..."
+  />
+</mat-form-field>
+
 <table
   mat-table
   [dataSource]="cities"
@@ -44,6 +52,7 @@
 
 <!-- Pagination directive -->
 <mat-paginator
+  [hidden]="!cities"
   (page)="getCities($event)"
   [pageSize]="10"
   [pageSizeOptions]="[10, 20, 50]"

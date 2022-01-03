@@ -31,6 +31,15 @@ namespace worldcities
             // add application dbcontext and SQL Server support
             services.AddDbContext<ApplicationDbContext>(options =>
                                         options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+            services.AddControllersWithViews()
+                .AddJsonOptions(options =>
+                {
+                    // set this option to TRUE to indent the JSON output
+                    options.JsonSerializerOptions.WriteIndented = true;
+                    // set this option to NULL to use PascalCase instead of camelCase
+                    // options.JsonSerializerOptions.PropertyNamePolicy = null;
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -115,6 +116,31 @@ namespace worldcities.Controllers
         private bool CountryExists(int id)
         {
             return _context.Countries.Any(e => e.Id == id);
+        }
+
+        [HttpPost]
+        [Route("IsDupeField")]
+        public bool IsDupeField(
+            int countryId,
+            string fieldName,
+            string fieldValue)
+        {
+            // switch (fieldName)
+            // {
+            //     case "name":
+            //         return _context.Countries.Any(c => c.Name == fieldValue && c.Id != countryId);
+            //     case "iso2":
+            //         return _context.Countries.Any(c => c.ISO2 == fieldValue && c.Id != countryId);
+            //     case "iso3":
+            //         return _context.Countries.Any(c => c.ISO3 == fieldValue && c.Id != countryId);
+            //     default:
+            //         return false;
+            // }
+
+            // Alternative approach using System.Linq.Dynamic.Core
+            return (ApiResult<Country>.IsValidProperty(fieldName, true))
+                ? _context.Countries.Any(string.Format("{0} == @0 && Id != @1", fieldName), fieldValue, countryId)
+                : false;
         }
     }
 }

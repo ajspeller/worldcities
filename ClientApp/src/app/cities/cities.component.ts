@@ -1,6 +1,9 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
@@ -27,6 +30,8 @@ export class CitiesComponent implements OnInit {
   @ViewChild(MatPaginator, { static: false }) paginator: MatPaginator;
   @ViewChild(MatSort, { static: false }) sort: MatSort;
 
+  filterTextChanged: Subject<string> = new Subject<string>();
+
   constructor(
     private http: HttpClient,
     @Inject('BASE_URL') private baseUrl: string
@@ -34,6 +39,16 @@ export class CitiesComponent implements OnInit {
 
   ngOnInit() {
     this.initialize(null);
+  }
+
+  // debounce filter text changes
+  onFilterTextChanged(filterText: string) {
+    if (this.filterTextChanged.observers.length === 0) {
+      this.filterTextChanged
+        .pipe(debounceTime(1000), distinctUntilChanged())
+        .subscribe((query: string) => this.initialize(query));
+    }
+    this.filterTextChanged.next(filterText);
   }
 
   initialize(query: string = null) {
@@ -75,3 +90,7 @@ export class CitiesComponent implements OnInit {
     );
   }
 }
+function debounceTime(arg0: number): import("rxjs").OperatorFunction<string, unknown> {
+  throw new Error('Function not implemented.');
+}
+

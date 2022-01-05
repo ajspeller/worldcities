@@ -1,0 +1,137 @@
+<div class="city-edit">
+  <h1>{{ title }}</h1>
+
+  <p *ngIf="this.id && !city"><em>Loading ...</em></p>
+
+  <div class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div
+      *ngIf="form.invalid && form.errors && form.errors?.isDupeCity"
+      class="alert alert-danger"
+    >
+      <strong>ERROR</strong>: A city with the same <em>Name</em>,
+      <em>Latitude</em>, <em>Longitude</em> and <em>Country</em> already exists.
+    </div>
+
+    <div class="form-group">
+      <label for="name">City name:</label>
+      <br />
+      <input
+        class="form-control"
+        type="text"
+        name="name"
+        id="name"
+        formControlName="name"
+        placeholder="City name..."
+        required
+      />
+      <div
+        *ngIf="
+          form.get('name').invalid &&
+          (form.get('name').dirty || form.get('name').touched)
+        "
+        class="invalid-feedback"
+      >
+        <div *ngIf="form.get('name').errors?.required">Name is required.</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="lat">City latitude:</label>
+      <br />
+      <input
+        class="form-control"
+        type="text"
+        name="lat"
+        id="lat"
+        formControlName="lat"
+        placeholder="City latitude..."
+        required
+      />
+      <div
+        *ngIf="
+          form.get('lat').invalid &&
+          (form.get('lat').dirty || form.get('lat').touched)
+        "
+        class="invalid-feedback"
+      >
+        <div *ngIf="form.get('lat').errors?.required">
+          Latitude is required.
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="lon">City lon:</label>
+      <br />
+      <input
+        class="form-control"
+        type="text"
+        name="lon"
+        id="lon"
+        formControlName="lon"
+        placeholder="City longitude..."
+        required
+      />
+      <div
+        *ngIf="
+          form.get('lon').invalid &&
+          (form.get('lon').dirty || form.get('lon').touched)
+        "
+        class="invalid-feedback"
+      >
+        <div *ngIf="form.get('lon').errors?.required">
+          Longitude is required.
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="countryId">Country:</label>
+      <br />
+      <mat-form-field *ngIf="countries">
+        <mat-label>Select a Country ...</mat-label>
+        <mat-select id="countryId" formControlName="countryId">
+          <mat-option *ngFor="let country of countries" [value]="country.id">{{
+            country.name
+          }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div
+        *ngIf="
+          form.get('countryId').invalid &&
+          (form.get('countryId').dirty || form.get('countryId').touched)
+        "
+        class="invalid-feedback"
+      >
+        <div *ngIf="form.get('countryId').errors?.required">
+          Please select a country.
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group commands">
+      <button
+        *ngIf="this.id"
+        class="btn button-success"
+        type="submit"
+        (click)="onSubmit()"
+        [disabled]="form.invalid"
+      >
+        Save
+      </button>
+      <button
+        *ngIf="!this.id"
+        class="btn btn-success"
+        type="submit"
+        (click)="onSubmit()"
+        [disabled]="form.invalid"
+      >
+        Create
+      </button>
+      <button class="btn" type="submit" [routerLink]="['/cities']">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>

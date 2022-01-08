@@ -1,5 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import {
   AbstractControl,
   AsyncValidatorFn,
@@ -8,18 +7,23 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-import { Country } from 'src/app/_models/country';
+import { ApiResult } from './../../_base/base.service';
+import { BaseFormComponent } from './../../_base/base.form.component';
+
+import { Country } from './../../_models/country';
 import { City } from './../../_models/city';
+import { CityService } from './../../_services/city.service';
 
 @Component({
   selector: 'app-city-edit',
   templateUrl: './city-edit.component.html',
   styleUrls: ['./city-edit.component.css'],
 })
-export class CityEditComponent implements OnInit {
+export class CityEditComponent extends BaseFormComponent implements OnInit {
   // the view title
   title: string;
 
@@ -39,9 +43,10 @@ export class CityEditComponent implements OnInit {
   constructor(
     private activatedRoute: ActivatedRoute,
     private router: Router,
-    private http: HttpClient,
-    @Inject('BASE_URL') private baseUrl: string
-  ) {}
+    private cityService: CityService
+  ) {
+    super();
+  }
 
   ngOnInit() {
     this.initializeForm();
@@ -49,11 +54,15 @@ export class CityEditComponent implements OnInit {
   }
 
   initializeForm() {
+    const validators = [
+      Validators.required,
+      Validators.pattern(/^[-]?[0-9]+(\.[0-9]{1,4})?$/),
+    ];
     this.form = new FormGroup(
       {
         name: new FormControl('', Validators.required),
-        lat: new FormControl('', Validators.required),
-        lon: new FormControl('', Validators.required),
+        lat: new FormControl('', validators),
+        lon: new FormControl('', validators),
         countryId: new FormControl('', Validators.required),
       },
       null,
@@ -70,8 +79,7 @@ export class CityEditComponent implements OnInit {
 
     if (this.id) {
       // fetch the city from the server
-      const url = `${this.baseUrl}api/Cities/${this.id}`;
-      this.http.get<City>(url).subscribe(
+      this.cityService.get<City>(this.id).subscribe(
         (fetchedCity) => {
           this.city = fetchedCity;
           this.title = `Edit - ${this.city.name}`;
@@ -88,20 +96,14 @@ export class CityEditComponent implements OnInit {
     }
   }
   loadCountries() {
-    // fetch all of the countries from the server
-    const url = `${this.baseUrl}api/Countries`;
-
-    const params = new HttpParams()
-      .set('pageIndex', '0')
-      .set('pageSize', '9999')
-      .set('sortColumn', 'name');
-
-    this.http.get<any>(url, { params }).subscribe(
-      (fetchedCountries) => {
-        this.countries = fetchedCountries.data;
-      },
-      (error) => console.log(error)
-    );
+    this.cityService
+      .getCountries<ApiResult<Country>>(0, 9999, 'name', null, null, null)
+      .subscribe(
+        (fetchedCountries) => {
+          this.countries = fetchedCountries.data;
+        },
+        (error) => console.log(error)
+      );
   }
 
   fetchFormValue(name: string): string {
@@ -126,9 +128,7 @@ export class CityEditComponent implements OnInit {
   }
 
   private addCity(city: City) {
-    const url = `${this.baseUrl}api/Cities`;
-
-    this.http.post<City>(url, city).subscribe(
+    this.cityService.post<City>(city).subscribe(
       (result) => {
         console.log(`City ${city.id} has been created.`);
 
@@ -140,8 +140,7 @@ export class CityEditComponent implements OnInit {
   }
 
   private editCity(city: City) {
-    const url = `${this.baseUrl}api/Cities/${this.city.id}`;
-    this.http.put<City>(url, city).subscribe(
+    this.cityService.put<City>(city).subscribe(
       (result) => {
         console.log(`City ${city.id} has been updated.`);
 
@@ -163,8 +162,7 @@ export class CityEditComponent implements OnInit {
       city.lon = +this.form.get('lon').value;
       city.countryId = +this.form.get('countryId').value;
 
-      const url = `${this.baseUrl}api/Cities/IsDupeCity`;
-      return this.http.post<boolean>(url, city).pipe(
+      return this.cityService.isDupeCity(city).pipe(
         map((result) => {
           return result ? { isDupeCity: true } : null;
         })

@@ -1,5 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -8,7 +7,10 @@ import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 
+import { ApiResult } from '../_base/base.service';
+
 import { City } from '../_models/city';
+import { CityService } from '../_services/city.service';
 
 @Component({
   selector: 'app-cities',
@@ -16,13 +18,13 @@ import { City } from '../_models/city';
   styleUrls: ['./cities.component.css'],
 })
 export class CitiesComponent implements OnInit {
-  public displayedColumns: string[] = ['id', 'name', 'lat', 'lon'];
-  public cities: MatTableDataSource<City>;
+  displayedColumns: string[] = ['id', 'name', 'lat', 'lon', 'countryName'];
+  cities: MatTableDataSource<City>;
 
   defaultPageIndex = 0;
   defaultPageSize = 10;
-  public defaultSortColumn = 'name';
-  public defaultSortOrder = 'asc';
+  defaultSortColumn = 'name';
+  defaultSortOrder = 'asc';
 
   defaultFilterColumn = 'name';
   filterQuery: string = null;
@@ -32,10 +34,7 @@ export class CitiesComponent implements OnInit {
 
   filterTextChanged: Subject<string> = new Subject<string>();
 
-  constructor(
-    private http: HttpClient,
-    @Inject('BASE_URL') private baseUrl: string
-  ) {}
+  constructor(private cityService: CityService) {}
 
   ngOnInit() {
     this.initialize(null);
@@ -62,31 +61,27 @@ export class CitiesComponent implements OnInit {
   }
 
   getCities(event: PageEvent) {
-    const url = `${this.baseUrl}api/Cities`;
-    let params = new HttpParams()
-      .set('pageIndex', event.pageIndex.toString())
-      .set('pageSize', event.pageSize.toString())
-      .set('sortColumn', this.sort ? this.sort.active : this.defaultSortColumn)
-      .set(
-        'sortOrder',
-        this.sort ? this.sort.direction : this.defaultSortOrder
+    const sortColumn = this.sort ? this.sort.active : this.defaultSortColumn;
+    const sortOrder = this.sort ? this.sort.direction : this.defaultSortOrder;
+    const filterColumn = this.filterQuery ? this.defaultFilterColumn : null;
+    const filterQuery = this.filterQuery ? this.filterQuery : null;
+    this.cityService
+      .getData<ApiResult<City>>(
+        event.pageIndex,
+        event.pageSize,
+        sortColumn,
+        sortOrder,
+        filterColumn,
+        filterQuery
+      )
+      .subscribe(
+        (result) => {
+          this.paginator.length = result.totalCount;
+          this.paginator.pageIndex = result.pageIndex;
+          this.paginator.pageSize = result.pageSize;
+          this.cities = new MatTableDataSource<City>(result.data);
+        },
+        (error) => console.error(error)
       );
-
-    if (this.filterQuery) {
-      params = params
-        .set('filterColumn', this.defaultFilterColumn)
-        .set('filterQuery', this.filterQuery);
-    }
-
-    this.http.get<any>(url, { params }).subscribe(
-      (result) => {
-        const { totalCount, pageIndex, pageSize, data } = result;
-        this.paginator.length = totalCount;
-        this.paginator.pageIndex = pageIndex;
-        this.paginator.pageSize = pageSize;
-        this.cities = new MatTableDataSource<City>(data);
-      },
-      (error) => console.error(error)
-    );
   }
 }

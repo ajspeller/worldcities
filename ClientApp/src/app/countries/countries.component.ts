@@ -1,14 +1,14 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
-
-import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+
+import { ApiResult } from './../_base/base.service';
 import { Country } from '../_models/country';
+import { CountryService } from '../_services/country.service';
 
 @Component({
   selector: 'app-countries',
@@ -16,7 +16,13 @@ import { Country } from '../_models/country';
   styleUrls: ['./countries.component.css'],
 })
 export class CountriesComponent implements OnInit {
-  public displayedColumns: string[] = ['id', 'name', 'iso2', 'iso3'];
+  public displayedColumns: string[] = [
+    'id',
+    'name',
+    'iso2',
+    'iso3',
+    'totCities',
+  ];
   public countries: MatTableDataSource<Country>;
 
   defaultPageIndex = 0;
@@ -32,24 +38,21 @@ export class CountriesComponent implements OnInit {
 
   filterTextChanged: Subject<string> = new Subject<string>();
 
-  constructor(
-    private http: HttpClient,
-    @Inject('BASE_URL') private baseUrl: string
-  ) {}
+  constructor(private countryService: CountryService) {}
 
   ngOnInit() {
     this.initialize(null);
   }
 
-    // debounce filter text changes
-    onFilterTextChanged(filterText: string) {
-      if (this.filterTextChanged.observers.length === 0) {
-        this.filterTextChanged
-          .pipe(debounceTime(1000), distinctUntilChanged())
-          .subscribe((query: string) => this.initialize(query));
-      }
-      this.filterTextChanged.next(filterText);
+  // debounce filter text changes
+  onFilterTextChanged(filterText: string) {
+    if (this.filterTextChanged.observers.length === 0) {
+      this.filterTextChanged
+        .pipe(debounceTime(1000), distinctUntilChanged())
+        .subscribe((query: string) => this.initialize(query));
     }
+    this.filterTextChanged.next(filterText);
+  }
 
   initialize(query: string = null) {
     const pageEvent = new PageEvent();
@@ -62,32 +65,27 @@ export class CountriesComponent implements OnInit {
   }
 
   getCountries(event: PageEvent) {
-    const url = `${this.baseUrl}api/Countries`;
-    let params = new HttpParams()
-      .set('pageIndex', event.pageIndex.toString())
-      .set('pageSize', event.pageSize.toString())
-      .set('sortColumn', this.sort ? this.sort.active : this.defaultSortColumn)
-      .set(
-        'sortOrder',
-        this.sort ? this.sort.direction : this.defaultSortOrder
+    const sortColumn = this.sort ? this.sort.active : this.defaultSortColumn;
+    const sortOrder = this.sort ? this.sort.direction : this.defaultSortOrder;
+    const filterColumn = this.filterQuery ? this.defaultFilterColumn : null;
+    const filterQuery = this.filterQuery ? this.filterQuery : null;
+    this.countryService
+      .getData<ApiResult<Country>>(
+        event.pageIndex,
+        event.pageSize,
+        sortColumn,
+        sortOrder,
+        filterColumn,
+        filterQuery
+      )
+      .subscribe(
+        (result) => {
+          this.paginator.length = result.totalCount;
+          this.paginator.pageIndex = result.pageIndex;
+          this.paginator.pageSize = result.pageSize;
+          this.countries = new MatTableDataSource<Country>(result.data);
+        },
+        (error) => console.error(error)
       );
-
-    if (this.filterQuery) {
-      params = params
-        .set('filterColumn', this.defaultFilterColumn)
-        .set('filterQuery', this.filterQuery);
-    }
-
-    this.http.get<any>(url, { params }).subscribe(
-      (result) => {
-        const { totalCount, pageIndex, pageSize, data } = result;
-        console.log({ data });
-        this.paginator.length = totalCount;
-        this.paginator.pageIndex = pageIndex;
-        this.paginator.pageSize = pageSize;
-        this.countries = new MatTableDataSource<Country>(data);
-      },
-      (error) => console.error(error)
-    );
   }
 }

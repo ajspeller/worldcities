@@ -21,7 +21,7 @@ export class CountryService extends BaseService {
     filterColumn: string,
     filterQuery: string
   ): Observable<ApiResult> {
-    const url = `${this.baseUrl}/api/Countries`;
+    const url = `${this.baseUrl}api/Countries`;
     let params = new HttpParams()
       .set('pageIndex', pageIndex.toString())
       .set('pageSize', pageSize.toString())

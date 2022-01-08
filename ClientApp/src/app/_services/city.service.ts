@@ -21,7 +21,7 @@ export class CityService extends BaseService {
     filterColumn: string,
     filterQuery: string
   ): Observable<ApiResult> {
-    const url = `${this.baseUrl}/api/Cities`;
+    const url = `${this.baseUrl}api/Cities`;
     let params = new HttpParams()
       .set('pageIndex', pageIndex.toString())
       .set('pageSize', pageSize.toString())
